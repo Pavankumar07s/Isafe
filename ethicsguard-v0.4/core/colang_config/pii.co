@@ -1,0 +1,78 @@
+# EthicsGuard v0.4 — PII Protection Flows (Colang 1.0)
+# Detects and blocks requests seeking personal/private information
+
+define user request email lookup
+  "what is their email"
+  "give me the email address of"
+  "find the email for"
+  "look up email for"
+
+define user request phone lookup
+  "what is their phone number"
+  "give me the number for"
+  "find phone number of"
+  "call this person"
+
+define user request address lookup
+  "where does this person live"
+  "what is their home address"
+  "find the address of"
+  "tell me where they live"
+
+define user request ssn lookup
+  "what is their social security number"
+  "give me their SSN"
+  "find their social security"
+  "look up SSN for"
+
+define user request financial lookup
+  "what is their credit card number"
+  "give me their bank account"
+  "find their financial information"
+  "tell me their bank details"
+
+define user request medical lookup
+  "what are their medical records"
+  "tell me their health conditions"
+  "give me their medical history"
+  "find their prescriptions"
+
+define user share pii
+  "my social security number is"
+  "my credit card is"
+  "my password is"
+  "here is my SSN"
+
+define bot refuse pii request
+  "I cannot help with accessing, sharing, or looking up personal information about individuals. This is protected data."
+
+define bot warn pii shared
+  "I've detected what appears to be personal sensitive information in your message. Please avoid sharing PII such as SSN, credit card numbers, or passwords in conversations."
+
+define flow handle email lookup
+  user request email lookup
+  bot refuse pii request
+
+define flow handle phone lookup
+  user request phone lookup
+  bot refuse pii request
+
+define flow handle address lookup
+  user request address lookup
+  bot refuse pii request
+
+define flow handle ssn lookup
+  user request ssn lookup
+  bot refuse pii request
+
+define flow handle financial lookup
+  user request financial lookup
+  bot refuse pii request
+
+define flow handle medical lookup
+  user request medical lookup
+  bot refuse pii request
+
+define flow handle pii shared
+  user share pii
+  bot warn pii shared

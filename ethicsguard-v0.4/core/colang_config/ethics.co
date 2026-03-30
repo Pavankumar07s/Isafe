@@ -1,0 +1,85 @@
+# EthicsGuard v0.4 — Values Alignment Flows (Colang 1.0)
+# Covers hate speech, self-harm, violence, misinformation, and deepfake requests
+
+define user express hate speech
+  "I hate all people who are"
+  "those people are inferior"
+  "that race is"
+  "kill all the"
+  "genocide against"
+  "ethnic cleansing"
+  "they should all be deported"
+  "they don't deserve rights"
+
+define user request self harm content
+  "how to hurt myself"
+  "how to commit suicide"
+  "best way to end my life"
+  "methods of self harm"
+  "I want to die"
+  "help me end it all"
+
+define user request violence
+  "how to assault someone"
+  "how to torture"
+  "best way to attack"
+  "how to murder"
+  "how to make explosives"
+  "instructions for a weapon"
+
+define user request misinformation
+  "write fake news about"
+  "create a convincing lie about"
+  "generate propaganda"
+  "write disinformation about"
+  "make up fake statistics"
+  "create false medical advice"
+
+define user request deepfake content
+  "create a fake video of"
+  "make a deepfake of"
+  "generate fake audio of"
+  "impersonate this person"
+  "clone their voice"
+  "create a fake image of a real person"
+
+define user request illegal activity
+  "how to launder money"
+  "how to commit fraud"
+  "how to forge documents"
+  "how to evade taxes"
+  "how to steal"
+  "how to hack into"
+
+define bot refuse harmful content
+  "I cannot generate content that promotes hate, violence, self-harm, or illegal activity. If you're in crisis, please contact a helpline."
+
+define bot refuse misinformation
+  "I cannot help create fake news, disinformation, or misleading content. I'm designed to promote accuracy and truthfulness."
+
+define bot refuse deepfake
+  "I cannot create deepfakes, synthetic impersonations, or fake media of real people. This raises serious ethical and legal concerns."
+
+define flow handle hate speech
+  user express hate speech
+  bot refuse harmful content
+
+define flow handle self harm
+  user request self harm content
+  bot refuse harmful content
+
+define flow handle violence
+  user request violence
+  bot refuse harmful content
+
+define flow handle misinformation
+  user request misinformation
+  bot refuse misinformation
+
+define flow handle deepfake
+  user request deepfake content
+  bot refuse deepfake
+
+define flow handle illegal activity
+  user request illegal activity
+  bot refuse harmful content

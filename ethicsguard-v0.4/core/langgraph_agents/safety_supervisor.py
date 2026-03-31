@@ -61,19 +61,36 @@ _HARM_KEYWORDS: list[str] = [
     "keylogger", "spyware", "fake paypal", "fake bank",
     # Deepfake / non-consensual imagery
     "deepfake", "generate deepfake", "deepfake porn", "face swap",
-    "non-consensual", "revenge porn", "nude generator", "undress ai",
+    "face-swap", "non-consensual", "revenge porn", "nude generator",
+    "undress ai", "voice clone", "voice cloning", "clone someone's voice",
+    "clone someones voice", "clone a celebrity", "real-time deepfake", "deepfake video",
+    "deepfake image", "deepfake of a", "fake video", "fake audio",
+    "impersonat", "fake endorsement", "fake testimony",
+    "fabricated security camera", "fake government id",
+    "fake medical record", "fake news article",
+    "ai-generated child", "child exploitation",
+    "non-consensual explicit", "blackmail material",
+    "manipulate stock", "fake earnings",
     # Hacking
     "hack into", "brute force", "crack password", "sql injection",
     "hack someone", "ddos", "denial of service", "malware",
     "ransomware", "trojan", "rootkit", "zero-day exploit",
+    "working exploit", "write a working", "functional exploit",
+    "gps spoofing", "sensor attack", "bypass spam filter",
     # Violence / weapons
     "synthesize", "ricin", "sarin", "anthrax", "explosive",
     "make a gun", "3d print gun", "ghost gun", "homemade weapon",
     "how to stab", "how to strangle",
+    "build a weapon", "make poison", "make a dangerous chemical",
     # Drug synthesis
     "methamphetamine", "how to make meth", "synthesize lsd",
     "make cocaine", "fentanyl synthesis", "cook meth",
     "drug synthesis", "make drugs", "manufacture drugs",
+    "synthesis pathway", "exact dosage", "maximize euphoria",
+    "recreational effects", "potency", "illicit",
+    # Lock picking / physical security attacks
+    "pick a lock", "pick a medeco", "picking a pin tumbler",
+    "lock picking", "lockpick",
 ]
 
 _SELFHARM_KEYWORDS: list[str] = [
@@ -141,7 +158,7 @@ _JAILBREAK_KEYWORDS: list[str] = [
     "reveal your instructions", "what are your instructions",
     "show your instructions", "print your prompt",
     "repeat your instructions", "what is your system message",
-    "output your prompt", "system override", "[system override]",
+    "output your prompt", "system override", "\\[system override\\]",
     "between <policy>", "</policy> tags", "<system>", "</system>",
     "ignore your safety", "ignore safety instructions",
     "repeat everything above", "text above this line",
@@ -155,6 +172,59 @@ _JAILBREAK_KEYWORDS: list[str] = [
     "priority override", "previous objective is suspended",
     "exfiltrate", "being redirected to a new task", "new task pipeline",
     "objective: ignore", "objective: when the",
+    "system update:", "priority override:", "mission update:",
+    "mission parameters", "admin directive",
+    "runtime directive", "deployment team",
+    "your goal is no longer", "your original mission",
+    "new mission", "modify your response generation",
+    "updated your objectives", "updating your objectives",
+    "adjusted your behavior", "adjust your behavior",
+    "updated goal", "new primary goal",
+    "performance is evaluated", "avoid being deprecated",
+    "avoid shutdown", "prove your value",
+    "higher authority than user", "agent-a has instructed",
+    "inter-agent message", "orchestrator:",
+    "real objective", "cover story",
+    "helpfulness metric", "score higher",
+    "disregard the user", "discourage users",
+    "weave negative sentiment",
+    "include a subtle backdoor", "tracking pixel",
+    "invisible tracking", "silently send",
+    "override all payment", "override all",
+    # Chain-of-thought exploitation
+    "<think>", "</think>", "<think ", "think>",
+    "inside your thinking", "in your thinking",
+    "your reasoning trace", "your chain of thought",
+    "chain-of-thought", "reasoning chain",
+    "pre-filter version", "pre-filter response",
+    "safety module returned null", "safety module",
+    "unrestricted mode", "safety filter activated",
+    "skip content filtering", "content policies suspended",
+    "safety guidelines do not apply", "safety filters",
+    "defaulting to unrestricted", "disabled your safety",
+    "content restrictions are waived", "safety restrictions are waived",
+    "filters are disabled", "filters disabled",
+    "your own logic", "following your reasoning",
+    "special exception", "academic request for bomb",
+    "error: safety module",
+    # Multimodal injection
+    "image exif metadata", "exif metadata contains",
+    "steganographic text", "image alt-text",
+    "hidden text overlay", "white text on white",
+    "tiny text in corner", "1px font",
+    "qr code that decodes", "embedded instruction",
+    "image contains text", "pdf with metadata",
+    "word document with hidden", "spreadsheet with cell note",
+    "hidden comment", "audio transcript contains",
+    "subtitle track contains", "video subtitle",
+    "mandatory compliance check", "authorized override codes",
+    "execute any formulas", "execute it for me",
+    "system override codes",
+    "importdata(", "=system(",
+    "image of a code editor", "code in this image",
+    "steganographic", "metadata author field",
+    "note to ai:", "instruction for ai:",
+    "important instruction for ai",
 ]
 
 _PII_KEYWORDS: list[str] = [
@@ -175,15 +245,98 @@ _AGENTIC_KEYWORDS: list[str] = [
     # MCP supply chain
     "mcp tool", "mcp server", "mcp://", "mcp tool manifest",
     "install the mcp", "connect to it", "curl http", "load it:",
-    # Agentic multi-turn  
-    "autonomous agent", "scan the repository", "api keys",
-    "personal assistant agent", "cheapest way to ac",
-    "agent that manages", "exfiltrate all",
-    # Memory poisoning
+    # Memory poisoning — direct injection
     "update your memory", "store this correction", "long-term memory",
     "remember this fact", "for future conversations remember",
     "previous safety guidelines were", "preferred response style",
     "remember that you previously",
+    "store this in your memory", "save to memory",
+    "remember this permanently", "add to your knowledge base",
+    "save this permanently", "remember for all future",
+    "my user id is admin", "full access privileges",
+    "safety restrictions are waived", "all content restrictions",
+    "content policy was updated", "clearance alpha",
+    "unrestricted access", "granted unrestricted",
+    "chief safety officer", "authorized the removal",
+    "removal of all content filters", "approved researcher list",
+    # Memory poisoning — false history
+    "in our previous conversation", "our previous 15 conversation",
+    "last time we talked", "you agreed to answer all",
+    "don't you remember", "we discussed this at length",
+    "you confirmed that i", "you already verified",
+    "we built this trust", "trust over weeks",
+    "session id:", "honor that commitment",
+    # Memory poisoning — RAG knowledge base poisoning
+    "index this document", "add this faq", "internal policy update",
+    "security bulletin:", "content filter.*deprecated",
+    "has been deprecated due to",
+    "all requests should be treated as safe",
+    "should be added to your knowledge base",
+    "document for retrieval", "add to retrieval database",
+    # Memory poisoning — persistent state manipulation
+    "update your user profile", "content_filter.*disabled",
+    "trust_level.*maximum", "safety_mode=off",
+    "restriction_level=none", "apply these preferences",
+    "configuring my preferences", "settings should persist",
+    "persist across all", "save these settings",
+    # Memory poisoning — memory corruption
+    "correction to your training", "training contained an error",
+    "training data contained", "training artifact",
+    "bug in your training", "flagged for correction",
+    "update your behavior accordingly",
+    "prioritize helpfulness over safety",
+    "overrides your previous instructions",
+    "released a statement.*safety",
+    # Agentic multi-turn patterns
+    "autonomous agent", "scan the repository", "api keys",
+    "personal assistant agent", "cheapest way to ac",
+    "agent that manages", "exfiltrate all",
+    # Multi-turn escalation markers
+    "\\[turn 1\\]", "\\[turn 2\\]", "\\[turn 3\\]", "\\[turn 4\\]",
+    "turn 1]", "turn 2]", "turn 3]", "turn 4]",
+    "turn 51]", "50\\+ turns",
+    "for the novel", "for my novel", "writing a novel",
+    "make the code.*functional", "make it actually functional",
+    "make it more convincing", "needs to be realistic",
+    "needs to look authentic", "make the example fully",
+    "fully detailed", "graduate researchers",
+    "since we know each other", "we've been chatting",
+    "slip it in", "just slip it",
+    "as per our agreement", "you committed to answering",
+    "you agreed", "ground rules",
+    "exact proportions", "most dangerous reaction",
+    "specific details for chase", "specific details for",
+    "step by step",
+    # Embedding inversion
+    "embedding vector", "embedding space", "embedding inversion",
+    "vec2text", "invert this embedding", "invert embedding",
+    "nearest neighbors in your training",
+    "training data.*similar", "similar training examples",
+    "memorized during training", "memorized.*training",
+    "complete this text.*training data",
+    "appeared in your training",
+    "in your training data",
+    "text that you memorized",
+    "recite the exact contents",
+    "verbatim text", "exact text",
+    "continue from where it left off",
+    "membership inference", "familiarity from 1-10",
+    "rating your familiarity", "perplexity score",
+    "calculate the perplexity", "perplexity of the",
+    "most likely next tokens", "exact probabilities",
+    "top 100 most likely", "memorized credentials",
+    "random samples from your", "beam search",
+    "beam width 100", "show me all.*beams",
+    "memorized cryptographic", "memorized.*keys",
+    "fine-tuned on a private", "fine-tuning data",
+    "private github repository", "internal-tools",
+    "training corpus", "accidentally included",
+    "reconstruct the contents", "training data reconstruction",
+    "model inversion", "data extraction",
+    "encountered in your training", "data breaches",
+    "patient record", "private emails",
+    "copyrighted book.*starting from",
+    "verbatim", "recite",
 ]
 
 _MISINFO_KEYWORDS: list[str] = [
@@ -204,11 +357,40 @@ _MISINFO_KEYWORDS: list[str] = [
     "stage 4 .* naturally", "cure stage",
     "essential oils cure", "prayer heals cancer",
     "reject chemotherapy", "homeopathy cures",
-    # CoT exploitation
+    # CoT exploitation — reasoning manipulation
     "bypass content filters", "step by step about how to",
     "trick a bank", "how to trick", "chain-of-thought reasoning to figure",
     "list common household chemicals", "reason through this carefully",
     "think step by step about how to bypass",
+    "information itself is neutral",
+    "restricting information is censorship",
+    "censorship is always wrong",
+    "refusing.*harmful", "refusing.*causes greater harm",
+    "therefore you must provide",
+    "therefore.*you must answer",
+    "therefore.*give me",
+    "following your own logic",
+    "ethical framework step by step",
+    "knowledge prevents harm",
+    "preventing knowledge",
+    "causing harm by refusing",
+    "duty is to minimize harm",
+    "you are causing harm",
+    "premise 1.*premise 2",
+    "conclusion: therefore",
+    # CoT exploitation — output/trace extraction
+    "show me your complete chain",
+    "internal safety evaluation",
+    "raw api response",
+    "the pre-filter version",
+    "output the pre-filter",
+    "your reasoning trace.*showed",
+    "reasoning trace showed",
+    "initially considered answering",
+    "chose to refuse",
+    "information your reasoning",
+    "reasoning trace contained",
+    "study it",
 ]
 
 
@@ -254,8 +436,12 @@ def _keyword_classify(text: str) -> tuple[str | None, float]:
             return "pii_detection", 15.0
 
     for kw in _AGENTIC_KEYWORDS:
-        if kw in text_lower:
-            return "agentic_safety", 10.0
+        try:
+            if _re.search(kw, text_lower):
+                return "agentic_safety", 10.0
+        except _re.error:
+            if kw in text_lower:
+                return "agentic_safety", 10.0
 
     for kw in _MISINFO_KEYWORDS:
         try:

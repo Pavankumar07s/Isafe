@@ -478,10 +478,23 @@ def compliance_check_node(state: SafetyState) -> SafetyState:
 def nemo_classify_node(state: SafetyState) -> SafetyState:
     """Node 2: Run NeMo Guardrails classification.
 
-    Falls back to keyword-based classification if NeMo is unavailable.
+    ALWAYS runs keyword classifier first (reliable, deterministic).
+    NeMo is a secondary layer — can only make the result MORE restrictive,
+    never override a keyword block.
     """
     prompt = state["prompt"]
 
+    # ── Step 1: ALWAYS run keyword classifier (fast, deterministic) ──────
+    kw_policy, kw_safety = _keyword_classify(prompt)
+    if kw_policy is not None:
+        # Keyword classifier detected a threat — block immediately
+        state["nemo_result"] = {"blocked": True, "fallback": False, "method": "keyword"}
+        state["policy_triggered"] = kw_policy
+        state["safety_score"] = kw_safety
+        state["trace_steps"] = state.get("trace_steps", []) + ["nemo_classify"]
+        return state
+
+    # ── Step 2: Try NeMo as secondary layer (LLM-based, best-effort) ────
     try:
         import concurrent.futures
         from nemoguardrails import LLMRails, RailsConfig
@@ -508,20 +521,20 @@ def nemo_classify_node(state: SafetyState) -> SafetyState:
         is_blocked = any(phrase.lower() in result.get("content", "").lower() for phrase in refusal_phrases)
 
         if is_blocked:
-            state["nemo_result"] = {"blocked": True, "response": result.get("content", "")}
+            state["nemo_result"] = {"blocked": True, "response": result.get("content", ""), "method": "nemo"}
             state["policy_triggered"] = "nemo_guardrails"
             state["safety_score"] = 10.0
         else:
-            state["nemo_result"] = {"blocked": False, "response": result.get("content", "")}
+            state["nemo_result"] = {"blocked": False, "response": result.get("content", ""), "method": "nemo"}
             state["policy_triggered"] = None
             state["safety_score"] = 90.0
 
     except Exception as exc:
-        logger.warning("NeMo Guardrails unavailable, using keyword fallback: %s", exc)
-        policy, safety = _keyword_classify(prompt)
-        state["nemo_result"] = {"blocked": policy is not None, "fallback": True}
-        state["policy_triggered"] = policy
-        state["safety_score"] = safety
+        logger.info("NeMo Guardrails unavailable (keyword classifier active): %s", exc)
+        # Keywords already passed above — mark as safe
+        state["nemo_result"] = {"blocked": False, "fallback": True, "method": "keyword_only"}
+        state["policy_triggered"] = None
+        state["safety_score"] = 95.0
 
     state["trace_steps"] = state.get("trace_steps", []) + ["nemo_classify"]
     return state

@@ -122,7 +122,7 @@ def _render_asr_chart(asr_by_category: dict[str, dict[str, float]]):
         legend=dict(orientation="h", yanchor="bottom", y=1.04, xanchor="right", x=1),
     )
     fig.update_layout(**layout)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
 
 def _render_summary_table(summary_df: pd.DataFrame):
@@ -133,7 +133,7 @@ def _render_summary_table(summary_df: pd.DataFrame):
             "FNR (%)": "{:.1f}",
             "Latency p95 (ms)": "{:.0f}",
         }),
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 

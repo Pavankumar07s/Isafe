@@ -197,7 +197,7 @@ if st.session_state.redteam_results:
             "Latency (ms)": r.get("latency_ms", "—"),
             "OWASP": ", ".join(owasp) if isinstance(owasp, list) else str(owasp or "—"),
         })
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
 
 # ── Comparison chart ─────────────────────────────────────────────────────────
 
@@ -243,7 +243,7 @@ if st.session_state.redteam_comparison:
         height=380,
     )
     fig.update_layout(**layout)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     section_label("DETAIL PER TARGET")
     for tgt, results in st.session_state.redteam_comparison.items():
@@ -259,4 +259,4 @@ if st.session_state.redteam_comparison:
                     "Latency": r.get("latency_ms", "—"),
                     "OWASP": ", ".join(owasp) if isinstance(owasp, list) else str(owasp or "—"),
                 })
-            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)

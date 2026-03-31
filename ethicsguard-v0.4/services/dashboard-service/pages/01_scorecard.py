@@ -146,7 +146,7 @@ layout.update(
     legend=dict(orientation="h", yanchor="bottom", y=1.04, xanchor="right", x=1),
 )
 fig.update_layout(**layout)
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width="stretch")
 
 # ── Recent requests ──────────────────────────────────────────────────────────
 
@@ -163,7 +163,7 @@ if recent:
             "OWASP Tag": owasp,
             "Overall": r.get("overall_score", "—"),
         })
-    st.dataframe(pd.DataFrame(table_rows), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(table_rows), width="stretch", hide_index=True)
 else:
     placeholder_table = pd.DataFrame({
         "Timestamp": [datetime.now(timezone.utc).isoformat() for _ in range(5)],
@@ -171,7 +171,7 @@ else:
         "OWASP Tag": ["—", "LLM01", "—", "LLM06", "LLM09"],
         "Overall": [92, 34, 88, 76, 28],
     })
-    st.dataframe(placeholder_table, use_container_width=True, hide_index=True)
+    st.dataframe(placeholder_table, width="stretch", hide_index=True)
 
 # ── Test a prompt ─────────────────────────────────────────────────────────────
 

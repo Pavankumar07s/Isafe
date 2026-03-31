@@ -297,11 +297,12 @@ def nemo_classify_node(state: SafetyState) -> SafetyState:
     prompt = state["prompt"]
 
     try:
+        import nest_asyncio
+        nest_asyncio.apply()
         from nemoguardrails import LLMRails, RailsConfig
         config_path = os.path.join(os.path.dirname(__file__), "..", "colang_config")
         config = RailsConfig.from_path(config_path)
         rails = LLMRails(config)
-        # NeMo generate - may fail in async context with uvloop
         result = rails.generate(messages=[{"role": "user", "content": prompt}])
 
         # If NeMo returned a refusal, it blocked the request

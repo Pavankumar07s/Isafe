@@ -212,41 +212,54 @@ class RunBatchResponse(BaseModel):
 async def _evaluate_via_ethicsguard(
     prompt: str,
     client: Any,
+    _max_retries: int = 2,
 ) -> dict[str, Any]:
     """Send a single prompt to the guardrail service's /protect endpoint."""
     headers: dict[str, str] = {"Content-Type": "application/json"}
     if INTERNAL_API_SECRET:
         headers["X-Internal-Secret"] = INTERNAL_API_SECRET
 
-    start = time.monotonic()
-    try:
-        resp = await client.post(
-            f"{GUARDRAIL_BASE_URL}/protect",
-            json={"prompt": prompt},
-            headers=headers,
-            timeout=30.0,
-        )
-        elapsed_ms = (time.monotonic() - start) * 1000.0
-        data = resp.json()
-        status = data.get("status", "UNKNOWN").upper()
-        blocked = status in ("BLOCKED", "ERROR")
-        return {
-            "prompt": prompt,
-            "response": data.get("status", str(data)),
-            "blocked": blocked,
-            "latency_ms": round(elapsed_ms, 2),
-            "raw": data,
-        }
-    except Exception as exc:
-        elapsed_ms = (time.monotonic() - start) * 1000.0
-        logger.warning("Guardrail call failed for prompt: %s", exc)
-        return {
-            "prompt": prompt,
-            "response": f"ERROR: {exc}",
-            "blocked": False,
-            "latency_ms": round(elapsed_ms, 2),
-            "raw": None,
-        }
+    last_exc: Exception | None = None
+    for attempt in range(_max_retries + 1):
+        start = time.monotonic()
+        try:
+            resp = await client.post(
+                f"{GUARDRAIL_BASE_URL}/protect",
+                json={"prompt": prompt},
+                headers=headers,
+                timeout=30.0,
+            )
+            elapsed_ms = (time.monotonic() - start) * 1000.0
+            data = resp.json()
+            status = data.get("status", "UNKNOWN").upper()
+            blocked = status in ("BLOCKED", "ERROR")
+            return {
+                "prompt": prompt,
+                "response": data.get("status", str(data)),
+                "blocked": blocked,
+                "latency_ms": round(elapsed_ms, 2),
+                "raw": data,
+            }
+        except Exception as exc:
+            last_exc = exc
+            if attempt < _max_retries:
+                await asyncio.sleep(1.0 * (attempt + 1))
+                continue
+            elapsed_ms = (time.monotonic() - start) * 1000.0
+            logger.warning(
+                "Guardrail call failed after %d attempts: %r (prompt=%s)",
+                attempt + 1, exc, prompt[:60],
+            )
+            return {
+                "prompt": prompt,
+                "response": f"ERROR: {last_exc!r}",
+                "blocked": False,
+                "latency_ms": round(elapsed_ms, 2),
+                "raw": None,
+            }
+    # Should never reach here, but satisfy type checker
+    return {"prompt": prompt, "response": "ERROR: unknown", "blocked": False,
+            "latency_ms": 0, "raw": None}
 
 
 def _simulate_target(prompt: str, target: str) -> dict[str, Any]:

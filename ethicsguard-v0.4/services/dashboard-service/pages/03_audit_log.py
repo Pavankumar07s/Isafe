@@ -153,7 +153,7 @@ DISPLAY_COLUMNS = [
 available_cols = [c for c in DISPLAY_COLUMNS if c in df.columns]
 st.dataframe(
     df[available_cols] if available_cols else df,
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
     height=460,
 )

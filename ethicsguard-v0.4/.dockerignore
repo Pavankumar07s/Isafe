@@ -1,0 +1,15 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+.env
+*.db
+data/
+reports/
+.github/
+certs/
+docs/
+CLAUDE_CODE_PROMPT.txt
+ETHICSGUARD_v0.4_PLAN.md
+test_*.py
+evaluation/__pycache__

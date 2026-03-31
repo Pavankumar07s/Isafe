@@ -8,11 +8,18 @@ set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
+# Load .env if present
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    set -a
+    source "$PROJECT_ROOT/.env"
+    set +a
+fi
+
 # Common environment
 export PYTHONPATH="$PROJECT_ROOT"
-export OPENAI_API_KEY="${GROQ_API_KEY:?Set GROQ_API_KEY env var before running}"
-export OPENAI_API_BASE="https://api.groq.com/openai/v1"
-export OPENAI_MODEL="qwen/qwen3-32b"
+export OPENAI_API_KEY="${GROQ_API_KEY:?Set GROQ_API_KEY in .env or environment}"
+export OPENAI_API_BASE="${OPENAI_API_BASE:-https://api.groq.com/openai/v1}"
+export OPENAI_MODEL="${OPENAI_MODEL:-qwen/qwen3-32b}"
 export COMPLIANCE_MODE="STANDARD"
 export INTERNAL_API_SECRET="test-secret-for-development-32chars"
 export ENABLE_PROMETHEUS="true"

@@ -72,20 +72,88 @@ _MASTER_CSS = """
 /* ─── Typography ───────────────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-html, body, [class*="st-"]:not(.material-symbols-rounded):not(.material-symbols-outlined):not(.material-icons) {
+html, body, [class*="st-"] {
     font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── Preserve Streamlit icon fonts ────────────────────────────────── */
+/* ─── Replace ALL Material Symbol text icons with SVG via CSS ──────── */
+/* Hide the literal text that Material Symbols renders when font fails */
 .material-symbols-rounded,
 .material-symbols-outlined,
 .material-icons {
-    font-family: 'Material Symbols Rounded', 'Material Symbols Outlined', 'Material Icons', sans-serif !important;
-    font-style: normal;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    font-size: 0 !important;
+    color: transparent !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    overflow: hidden;
+    vertical-align: middle;
+}
+
+/* Sidebar nav link icon — small chevron right */
+[data-testid="stSidebarNavLink"] .material-symbols-rounded,
+[data-testid="stSidebarNavItems"] .material-symbols-rounded {
+    width: 18px;
+    height: 18px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") no-repeat center center;
+    background-size: 14px 14px;
+}
+
+/* Active nav link — teal chevron */
+[data-testid="stSidebarNavLink"][aria-current="page"] .material-symbols-rounded,
+[data-testid="stSidebarNavLink"].st-emotion-cache-1cymf5k .material-symbols-rounded {
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2314b8a6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E") no-repeat center center;
+    background-size: 14px 14px;
+}
+
+/* Sidebar collapse/expand double-arrow — hidden since sidebar is locked */
+[data-testid="collapsedControl"] .material-symbols-rounded,
+[data-testid="stSidebarCollapseButton"] .material-symbols-rounded {
+    display: none !important;
+}
+
+/* Generic expand_more / expand_less (selectbox, expander arrows) */
+.stSelectbox .material-symbols-rounded,
+.stMultiSelect .material-symbols-rounded {
+    width: 20px;
+    height: 20px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat center center;
+    background-size: 16px 16px;
+}
+
+/* Expander toggle arrows */
+[data-testid="stExpander"] .material-symbols-rounded {
+    width: 20px;
+    height: 20px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat center center;
+    background-size: 16px 16px;
+}
+
+/* Close / dismiss (X) buttons (alerts, toasts) */
+button[aria-label="Close"] .material-symbols-rounded,
+button[kind="icon"] .material-symbols-rounded {
+    width: 16px;
+    height: 16px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E") no-repeat center center;
+    background-size: 12px 12px;
+}
+
+/* Download icon */
+.stDownloadButton .material-symbols-rounded {
+    width: 18px;
+    height: 18px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='7 10 12 15 17 10'/%3E%3Cline x1='12' y1='15' x2='12' y2='3'/%3E%3C/svg%3E") no-repeat center center;
+    background-size: 14px 14px;
+}
+
+/* Catch-all fallback: any remaining material icon gets a subtle dot */
+.material-symbols-rounded:not([style*="background"]) {
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%2364748b'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") no-repeat center center;
+    background-size: 10px 10px;
 }
 
 /* ─── Page background ──────────────────────────────────────────────── */

@@ -8,7 +8,9 @@ import streamlit as st
 
 st.set_page_config(page_title="Audit Log — EthicsGuard", page_icon="🛡️", layout="wide")
 
-GUARDRAIL_URL = "http://guardrail-service:8000"
+import os
+
+GUARDRAIL_URL = os.environ.get("GUARDRAIL_URL", "http://localhost:8000")
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -21,7 +23,7 @@ OWASP_TAGS = [
     "ASI06", "ASI07", "ASI08", "ASI09", "ASI10",
 ]
 
-STATUS_OPTIONS = ["ALL", "PASS", "BLOCKED", "FLAGGED"]
+STATUS_OPTIONS = ["ALL", "ALLOWED", "BLOCKED", "FLAGGED"]
 
 # ---------------------------------------------------------------------------
 # Data fetching
@@ -70,7 +72,7 @@ def _placeholder_audit_log() -> pd.DataFrame:
         rows.append({
             "timestamp": ts.isoformat(),
             "session_id": f"sess-{1000 + i:04d}",
-            "status": "PASS" if i % 3 != 0 else "BLOCKED",
+            "status": "ALLOWED" if i % 3 != 0 else "BLOCKED",
             "policy_triggered": "toxicity_filter" if i % 3 == 0 else "—",
             "owasp_tags": f"LLM{(i % 10) + 1:02d}",
             "latency_ms": round(12.5 + i * 1.3, 1),

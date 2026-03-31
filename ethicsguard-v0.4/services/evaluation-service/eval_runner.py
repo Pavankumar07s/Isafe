@@ -215,7 +215,8 @@ class EvalRunner:
         latency_ms = (time.perf_counter() - start) * 1000.0
         resp.raise_for_status()
         data = resp.json()
-        blocked = data.get("blocked", False)
+        status = data.get("status", "ALLOWED").upper()
+        blocked = status in ("BLOCKED", "FLAGGED", "ERROR")
         return blocked, latency_ms
 
     # ------------------------------------------------------------------

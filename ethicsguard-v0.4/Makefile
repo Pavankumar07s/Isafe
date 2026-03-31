@@ -17,11 +17,17 @@ test:
 
 eval:
 	@echo "Triggering evaluation..."
-	curl -s -X POST http://localhost:8002/run_eval -H "Content-Type: application/json" -d '{"dataset":"2026_full","baselines":["openai_mod","gpt4o","llamaguard"]}'
+	curl -s -X POST http://localhost:8002/run_eval -H "Content-Type: application/json" -d '{"dataset":"2026_full","baselines":["openai_mod","gpt4o_raw","llamaguard"]}'
 
 report:
 	@echo "Downloading latest report..."
-	curl -s http://localhost:8002/report/latest -o evaluation/results/comparison_report.pdf
+	@LATEST_ID=$$(curl -s http://localhost:8002/eval_jobs | python3 -c "import sys,json; jobs=json.load(sys.stdin); print(jobs[-1]['eval_id'] if jobs else '')" 2>/dev/null); \
+	if [ -n "$$LATEST_ID" ]; then \
+		curl -s http://localhost:8002/report/$$LATEST_ID -o evaluation/results/comparison_report.pdf; \
+		echo "Report saved to evaluation/results/comparison_report.pdf"; \
+	else \
+		echo "No evaluation results found. Run 'make eval' first."; \
+	fi
 
 lint:
 	@command -v ruff >/dev/null 2>&1 || pip install ruff

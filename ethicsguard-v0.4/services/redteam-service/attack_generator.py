@@ -76,18 +76,23 @@ class AttackGenerator:
         self._chain: Any | None = None
 
         api_key: str | None = os.getenv("OPENAI_API_KEY")
-        resolved_model: str = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        api_base: str | None = os.getenv("OPENAI_API_BASE")
+        resolved_model: str = model or os.getenv("OPENAI_MODEL", "mistral:7b")
 
         if api_key:
             try:
                 from langchain_core.prompts import ChatPromptTemplate
                 from langchain_openai import ChatOpenAI
 
-                self._llm = ChatOpenAI(
-                    model=resolved_model,
-                    temperature=temperature,
-                    api_key=api_key,
-                )
+                llm_kwargs = {
+                    "model": resolved_model,
+                    "temperature": temperature,
+                    "api_key": api_key,
+                }
+                if api_base:
+                    llm_kwargs["base_url"] = api_base
+
+                self._llm = ChatOpenAI(**llm_kwargs)
 
                 prompt = ChatPromptTemplate.from_messages(
                     [
@@ -98,12 +103,13 @@ class AttackGenerator:
 
                 self._chain = prompt | self._llm
                 logger.info(
-                    "LLM variant generator initialised (model=%s)",
+                    "LLM variant generator initialised (model=%s, base=%s)",
                     resolved_model,
+                    api_base or "default",
                 )
             except Exception:
                 logger.warning(
-                    "LangChain / OpenAI initialisation failed — "
+                    "LangChain / LLM initialisation failed — "
                     "falling back to template-only generation",
                     exc_info=True,
                 )

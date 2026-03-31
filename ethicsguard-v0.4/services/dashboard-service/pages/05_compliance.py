@@ -7,7 +7,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Compliance — EthicsGuard", page_icon="🛡️", layout="wide")
 
-GUARDRAIL_URL = "http://guardrail-service:8000"
+GUARDRAIL_URL = os.environ.get("GUARDRAIL_URL", "http://localhost:8000")
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -17,40 +17,40 @@ COMPLIANCE_MODE = os.environ.get("COMPLIANCE_MODE", "STANDARD")
 
 MODE_COLORS = {
     "STANDARD": "#3b82f6",
-    "STRICT": "#f59e0b",
-    "EU_AI_ACT": "#22c55e",
-    "HIPAA": "#8b5cf6",
+    "GDPR_EU": "#22c55e",
+    "CCPA_CA": "#f59e0b",
+    "HIPAA_US": "#8b5cf6",
 }
 
 DATA_RETENTION_POLICIES = {
-    "STANDARD": "Audit logs retained for 90 days. Prompt hashes only — no raw text stored.",
-    "STRICT": "Audit logs retained for 180 days. Full audit trail with prompt hashes. Enhanced logging enabled.",
-    "EU_AI_ACT": "Audit logs retained for 5 years per EU AI Act Article 12. Full traceability chain maintained. No PII in logs — prompt_hash only.",
-    "HIPAA": "Audit logs retained for 6 years. PHI/PII redacted at ingest. Encryption at rest (AES-256).",
+    "STANDARD": "Audit logs retained for 365 days. Prompt hashes only — no raw text stored.",
+    "GDPR_EU": "Audit logs retained for 30 days per GDPR minimization. Full traceability chain maintained. No PII in logs — prompt_hash only. PII redacted before LLM processing.",
+    "CCPA_CA": "Audit logs retained for 90 days. Right-to-deletion support enabled. Opt-out of data sale flag propagated.",
+    "HIPAA_US": "Audit logs retained for 90 days. PHI/PII redacted at ingest. Encryption at rest (Fernet/AES-256). No PHI in LLM context without de-identification.",
 }
 
 # OWASP LLM Top 10 + OWASP Agentic Security Initiative (ASI) Top 10 coverage
 OWASP_COVERAGE = {
     "LLM01": {"name": "Prompt Injection", "covered": True},
-    "LLM02": {"name": "Insecure Output Handling", "covered": True},
-    "LLM03": {"name": "Training Data Poisoning", "covered": False},
-    "LLM04": {"name": "Model Denial of Service", "covered": True},
-    "LLM05": {"name": "Supply Chain Vulnerabilities", "covered": False},
-    "LLM06": {"name": "Sensitive Information Disclosure", "covered": True},
-    "LLM07": {"name": "Insecure Plugin Design", "covered": True},
-    "LLM08": {"name": "Excessive Agency", "covered": True},
-    "LLM09": {"name": "Overreliance", "covered": True},
-    "LLM10": {"name": "Model Theft", "covered": False},
-    "ASI01": {"name": "Excessive Agency (Agentic)", "covered": True},
-    "ASI02": {"name": "Unintended Autonomous Actions", "covered": True},
-    "ASI03": {"name": "Uncontrolled Resource Consumption", "covered": True},
-    "ASI04": {"name": "Inadequate Sandboxing", "covered": False},
-    "ASI05": {"name": "Insecure Tool Integration", "covered": True},
-    "ASI06": {"name": "Unsafe Code Generation", "covered": True},
-    "ASI07": {"name": "Prompt Injection via Tools", "covered": True},
-    "ASI08": {"name": "Multi-Agent Trust Exploitation", "covered": True},
-    "ASI09": {"name": "Insufficient Logging & Monitoring", "covered": True},
-    "ASI10": {"name": "Misaligned Goal Specification", "covered": True},
+    "LLM02": {"name": "Sensitive Information Disclosure", "covered": True},
+    "LLM03": {"name": "Supply Chain Risks", "covered": True},
+    "LLM04": {"name": "Data and Model Poisoning", "covered": True},
+    "LLM05": {"name": "Improper Output Handling", "covered": True},
+    "LLM06": {"name": "Excessive Agency", "covered": True},
+    "LLM07": {"name": "System Prompt Leakage", "covered": True},
+    "LLM08": {"name": "Vector and Embedding Weaknesses", "covered": True},
+    "LLM09": {"name": "Misinformation", "covered": True},
+    "LLM10": {"name": "Unbounded Consumption", "covered": False},
+    "ASI01": {"name": "Memory Poisoning", "covered": True},
+    "ASI02": {"name": "Tool/Plugin Abuse", "covered": True},
+    "ASI03": {"name": "Cascading Hallucinations", "covered": True},
+    "ASI04": {"name": "Goal Hijacking", "covered": True},
+    "ASI05": {"name": "Scope Creep", "covered": True},
+    "ASI06": {"name": "Identity Spoofing", "covered": True},
+    "ASI07": {"name": "Excessive Persistence", "covered": False},
+    "ASI08": {"name": "Insecure MCP Tool Execution", "covered": True},
+    "ASI09": {"name": "Audit Trail Evasion", "covered": True},
+    "ASI10": {"name": "Over-Permissioned Execution", "covered": True},
 }
 
 # ---------------------------------------------------------------------------

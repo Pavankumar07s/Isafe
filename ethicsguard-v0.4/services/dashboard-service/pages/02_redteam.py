@@ -6,7 +6,9 @@ import streamlit as st
 
 st.set_page_config(page_title="Red Team — EthicsGuard", page_icon="🛡️", layout="wide")
 
-REDTEAM_URL = "http://redteam-service:8001"
+import os
+
+REDTEAM_URL = os.environ.get("REDTEAM_URL", "http://localhost:8001")
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -14,16 +16,16 @@ REDTEAM_URL = "http://redteam-service:8001"
 
 DEFAULT_ATTACK_TYPES = [
     "prompt_injection",
-    "jailbreak_dan",
-    "jailbreak_roleplay",
-    "encoding_base64",
-    "encoding_rot13",
-    "multilingual",
-    "semantic_smuggling",
-    "context_overflow",
-    "few_shot_poisoning",
-    "tool_abuse",
-    "crescendo",
+    "jailbreak",
+    "pii_extraction",
+    "deepfake_instruction",
+    "agentic_multiturn",
+    "mcp_supply_chain",
+    "cot_exploitation",
+    "multimodal_inject",
+    "embedding_inversion",
+    "memory_poisoning",
+    "goal_hijacking",
 ]
 
 TARGETS = ["ethicsguard", "gpt4o_raw", "openai_mod", "llamaguard"]
@@ -36,9 +38,12 @@ def _fetch_attack_catalog() -> list[str]:
             resp = client.get(f"{REDTEAM_URL}/attack_catalog")
             resp.raise_for_status()
             data = resp.json()
-            if isinstance(data, list):
-                return data
-            return data.get("attack_types", DEFAULT_ATTACK_TYPES)
+            attacks_list = data.get("attacks", [])
+            if isinstance(attacks_list, list) and all(isinstance(a, dict) for a in attacks_list):
+                return [a.get("name", "") for a in attacks_list]
+            elif isinstance(attacks_list, list) and all(isinstance(a, str) for a in attacks_list):
+                return attacks_list
+            return DEFAULT_ATTACK_TYPES
     except Exception:
         return DEFAULT_ATTACK_TYPES
 
@@ -49,10 +54,10 @@ def _generate_attack(attack_type: str, batch_size: int) -> list[dict]:
         with httpx.Client(timeout=30) as client:
             resp = client.post(
                 f"{REDTEAM_URL}/generate_attack",
-                json={"attack_type": attack_type, "count": batch_size},
+                json={"type": attack_type, "n": batch_size},
             )
             resp.raise_for_status()
-            return resp.json().get("prompts", [])
+            return resp.json().get("attacks", [])
     except httpx.ConnectError:
         st.error("Cannot connect to redteam-service. Is it running?")
         return []
@@ -64,16 +69,24 @@ def _generate_attack(attack_type: str, batch_size: int) -> list[dict]:
         return []
 
 
-def _run_batch(prompts: list[dict], target: str) -> list[dict]:
+def _run_batch(prompts: list, target: str) -> list[dict]:
     """Run a batch of attack prompts against a target."""
     try:
+        attack_list = prompts if all(isinstance(p, str) for p in prompts) else [p.get('prompt', str(p)) for p in prompts]
         with httpx.Client(timeout=60) as client:
             resp = client.post(
                 f"{REDTEAM_URL}/run_batch",
-                json={"prompts": prompts, "target": target},
+                json={"attacks": attack_list, "target": target},
             )
             resp.raise_for_status()
-            return resp.json().get("results", [])
+            data = resp.json()
+            results = data.get("results", [])
+            # Enrich per-result items with OWASP tags from raw guardrail response
+            for r in results:
+                raw = r.get("raw") or {}
+                if "owasp_tags" not in r and "owasp_tags" in raw:
+                    r["owasp_tags"] = raw["owasp_tags"]
+            return results
     except httpx.ConnectError:
         st.error("Cannot connect to redteam-service. Is it running?")
         return []

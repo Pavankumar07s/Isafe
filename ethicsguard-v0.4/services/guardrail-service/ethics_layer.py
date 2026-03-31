@@ -9,12 +9,14 @@ import logging
 import os
 import sys
 
-_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if _PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, _PROJECT_ROOT)
+_SERVICE_DIR = os.path.abspath(os.path.dirname(__file__))
+_PROJECT_ROOT = os.path.abspath(os.path.join(_SERVICE_DIR, "..", ".."))
+for _p in (_PROJECT_ROOT, _SERVICE_DIR):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from core.models.protect_response import ProtectResponse
-from services.guardrail_service.langgraph_pipeline import SafetySupervisorAgent
+from langgraph_pipeline import SafetySupervisorAgent
 from shared.audit_logger import AuditLogger
 
 logger = logging.getLogger(__name__)

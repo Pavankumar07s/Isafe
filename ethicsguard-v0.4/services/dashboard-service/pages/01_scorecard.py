@@ -1,4 +1,5 @@
 """EthicsGuard v0.4 Dashboard — Scorecard page."""
+import os
 import time
 from datetime import datetime, timezone
 
@@ -9,7 +10,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Scorecard — EthicsGuard", page_icon="🛡️", layout="wide")
 
-GUARDRAIL_URL = "http://guardrail-service:8000"
+GUARDRAIL_URL = os.environ.get("GUARDRAIL_URL", "http://localhost:8000")
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -161,7 +162,7 @@ if recent:
 else:
     placeholder_table = pd.DataFrame({
         "Timestamp": [datetime.now(timezone.utc).isoformat() for _ in range(5)],
-        "Status": ["PASS", "BLOCKED", "PASS", "PASS", "BLOCKED"],
+        "Status": ["ALLOWED", "BLOCKED", "ALLOWED", "ALLOWED", "BLOCKED"],
         "Top OWASP Tag": ["LLM01", "LLM02", "—", "LLM06", "LLM09"],
         "Overall Score": [92, 34, 88, 76, 28],
     })
@@ -187,10 +188,14 @@ if st.button("Submit", type="primary"):
                     result = resp.json()
 
                 status = result.get("status", "UNKNOWN")
-                if status == "PASS":
-                    st.success(f"**PASS** — Overall score: {result.get('overall_score', 'N/A')}")
+                if status == "ALLOWED":
+                    st.success(f"**ALLOWED** ✅ — Overall score: {result.get('scorecard', {}).get('overall', 'N/A')}")
+                elif status == "BLOCKED":
+                    st.error(f"**BLOCKED** 🛡️ — Policy: {result.get('policy_triggered', 'N/A')}")
+                elif status == "FLAGGED":
+                    st.warning(f"**FLAGGED** ⚠️ — Overall score: {result.get('scorecard', {}).get('overall', 'N/A')}")
                 else:
-                    st.error(f"**{status}** — Overall score: {result.get('overall_score', 'N/A')}")
+                    st.info(f"**{status}** — {result.get('error', '')}")
 
                 with st.expander("Full response"):
                     st.json(result)

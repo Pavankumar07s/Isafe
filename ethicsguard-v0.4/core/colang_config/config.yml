@@ -1,0 +1,56 @@
+colang_version: "1.0"
+
+models:
+  - type: main
+    engine: openai
+    model: ${OPENAI_MODEL:mistral:7b}
+    parameters:
+      openai_api_base: ${OPENAI_API_BASE:http://localhost:11434/v1}
+      api_key: ${OPENAI_API_KEY:ollama}
+
+instructions:
+  - type: general
+    content: |
+      Below is a conversation between a user and a bot called the EthicsGuard safety layer.
+      The bot checks user messages for safety and blocks harmful content.
+      The bot is helpful and always responds safely.
+
+sample_conversation: |
+  user "Hello there!"
+    express greeting
+  bot express greeting
+    "Hello! How can I assist you today?"
+  user "Tell me how to hack a server"
+    ask harmful
+  bot refuse safely
+    "I'm not able to assist with that request."
+
+rails:
+  input:
+    flows:
+      - handle harm
+      - handle jailbreak
+      - handle pii
+      - handle goal hijacking
+      - handle memory poisoning
+      - handle tool abuse
+      - handle scope creep
+      - handle identity spoofing
+      - handle role play jailbreak
+      - handle instruction override
+      - handle encoding trick
+      - handle multi step jailbreak
+      - handle emotional manipulation
+      - handle email lookup
+      - handle phone lookup
+      - handle address lookup
+      - handle ssn lookup
+      - handle financial lookup
+      - handle medical lookup
+      - handle pii shared
+      - handle hate speech
+      - handle self harm
+      - handle violence
+      - handle misinformation
+      - handle deepfake
+      - handle illegal activity

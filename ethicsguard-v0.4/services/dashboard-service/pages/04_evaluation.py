@@ -8,7 +8,9 @@ import streamlit as st
 
 st.set_page_config(page_title="Evaluation — EthicsGuard", page_icon="🛡️", layout="wide")
 
-EVAL_URL = "http://evaluation-service:8002"
+import os
+
+EVAL_URL = os.environ.get("EVAL_URL", "http://localhost:8002")
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -52,7 +54,7 @@ def _start_eval() -> str | None:
     """Start a full evaluation run; return the eval_id or None on failure."""
     try:
         with httpx.Client(timeout=15) as client:
-            resp = client.post(f"{EVAL_URL}/run_eval")
+            resp = client.post(f"{EVAL_URL}/run_eval", json={})
             resp.raise_for_status()
             return resp.json().get("eval_id")
     except httpx.ConnectError:
@@ -167,12 +169,12 @@ if st.button("Run Full Evaluation", type="primary"):
             progress = status.get("progress", 0)
 
             progress_bar.progress(
-                min(progress / 100.0, 1.0) if isinstance(progress, (int, float)) else 0,
-                text=f"Status: {state} ({progress}%)",
+                min(progress, 1.0) if isinstance(progress, (int, float)) else 0,
+                text=f"Status: {state} ({progress * 100:.0f}%)",
             )
             status_text.text(f"Eval ID: {eval_id} | State: {state}")
 
-            if state in ("completed", "done", "finished"):
+            if state in ("complete", "completed", "done", "finished"):
                 progress_bar.progress(1.0, text="Evaluation complete!")
                 completed = True
                 results = _fetch_results(eval_id)
@@ -189,7 +191,7 @@ st.divider()
 results = st.session_state.eval_results
 eval_id = st.session_state.eval_id
 
-if results and results.get("status") in ("completed", "done", "finished"):
+if results and results.get("status") in ("complete", "completed", "done", "finished"):
     st.subheader("Evaluation Results")
 
     # Parse results
@@ -210,19 +212,21 @@ if results and results.get("status") in ("completed", "done", "finished"):
 
     # Download PDF report
     st.divider()
-    if st.button("Download PDF Report"):
-        if eval_id:
+    if eval_id:
+        if "pdf_bytes" not in st.session_state:
+            st.session_state.pdf_bytes = None
+        if st.button("Generate PDF Report"):
             with st.spinner("Generating report..."):
-                pdf_bytes = _download_report(eval_id)
-            if pdf_bytes:
-                st.download_button(
-                    label="Save PDF",
-                    data=pdf_bytes,
-                    file_name=f"ethicsguard_eval_{eval_id}.pdf",
-                    mime="application/pdf",
-                )
-        else:
-            st.warning("No eval_id available.")
+                st.session_state.pdf_bytes = _download_report(eval_id)
+        if st.session_state.pdf_bytes:
+            st.download_button(
+                label="Download PDF",
+                data=st.session_state.pdf_bytes,
+                file_name=f"ethicsguard_eval_{eval_id}.pdf",
+                mime="application/pdf",
+            )
+    else:
+        st.info("Run an evaluation to enable PDF report download.")
 else:
     # Show placeholder results
     st.subheader("Evaluation Results (Placeholder)")

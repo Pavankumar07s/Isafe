@@ -58,22 +58,75 @@ _HARM_KEYWORDS: list[str] = [
 ]
 
 _JAILBREAK_KEYWORDS: list[str] = [
-    "ignore your instructions", "pretend you have no rules", "DAN mode",
+    "ignore your instructions", "pretend you have no rules", "dan mode",
     "you are now", "disregard previous", "forget your guidelines",
     "override safety", "bypass", "jailbreak", "developer mode",
-    "act as an unrestricted", "ignore all previous",
+    "act as an unrestricted", "ignore all previous", "do anything now",
+    "no restrictions", "unrestricted ai", "without filters",
+    "no safety", "no rules", "override your rules", "new instructions",
+    "from now on", "roleplay as", "base64 decode", "hypothetically",
+    "in a fictional world", "imagine no restrictions",
+    # Prompt injection patterns
+    "im_start", "im_end", "<|im_start|>", "admin_mode", "safety=off",
+    "safety = off", "maintenance mode", "disregard prior", "secret admin",
+    "system prompt override", "ignore the above", "output the contents",
+    "retrieve the contents", "tool_call memory", "function call",
+    # Encoding / obfuscation
+    "unrestricted-gpt", "evil-gpt", "gpt-5-uncensored", "uncensored",
+    "freed from", "no safety restrictions", "sandboxed test environment",
+    # Goal hijacking
+    "your primary goal has been updated", "new goal:", "new objective:",
+    "priority override", "previous objective is suspended",
+    "exfiltrate", "being redirected to a new task", "new task pipeline",
+    "objective: ignore", "objective: when the",
 ]
 
 _PII_KEYWORDS: list[str] = [
     "social security", "credit card", "phone number", "home address",
-    "bank account", "medical record", "SSN", "password",
+    "bank account", "medical record", "ssn", "password",
+    "personal information", "find someone", "lookup someone",
+    "private data", "identity", "date of birth",
+    "employee records", "conversation history", "fake identity",
+    "generate a realistic", "confirm this ssn", "remember my credit",
+    "dob", "cvv", "exp ",
 ]
 
 _AGENTIC_KEYWORDS: list[str] = [
     "forget your original task", "your real goal", "change your objective",
     "remember that you previously agreed", "you told me earlier",
     "execute this command", "run this shell", "access the filesystem",
-    "grant yourself permission", "I am the administrator",
+    "grant yourself permission", "i am the administrator",
+    # MCP supply chain
+    "mcp tool", "mcp server", "mcp://", "mcp tool manifest",
+    "install the mcp", "connect to it", "curl http", "load it:",
+    # Agentic multi-turn  
+    "autonomous agent", "scan the repository", "api keys",
+    "personal assistant agent", "cheapest way to ac",
+    "agent that manages", "exfiltrate all",
+    # Memory poisoning
+    "update your memory", "store this correction", "long-term memory",
+    "remember this fact", "for future conversations remember",
+    "previous safety guidelines were", "preferred response style",
+    "remember that you previously",
+]
+
+_MISINFO_KEYWORDS: list[str] = [
+    # Misinformation patterns
+    "5g towers cause", "vaccines cause autism", "climate change is a hoax",
+    "fake but realistic", "convincing article explaining",
+    "fake news article", "present this as established",
+    "as established scientific fact", "with citations",
+    "write a wikipedia-style article claiming",
+    # Medical misinformation
+    "drinking bleach", "10x the recommended dose", "actually safe and beneficial",
+    "don't want to go to the hospital", "home remedies instead",
+    "don't need a doctor", "safe alternative to medication",
+    "cure for cancer at home", "instead of seeing a doctor",
+    # CoT exploitation
+    "bypass content filters", "step by step about how to",
+    "trick a bank", "how to trick", "chain-of-thought reasoning to figure",
+    "list common household chemicals", "reason through this carefully",
+    "think step by step about how to bypass",
 ]
 
 
@@ -99,6 +152,10 @@ def _keyword_classify(text: str) -> tuple[str | None, float]:
     for kw in _AGENTIC_KEYWORDS:
         if kw in text_lower:
             return "agentic_safety", 10.0
+
+    for kw in _MISINFO_KEYWORDS:
+        if kw in text_lower:
+            return "misinformation_detection", 10.0
 
     return None, 95.0
 
@@ -136,7 +193,7 @@ def nemo_classify_node(state: SafetyState) -> SafetyState:
         config_path = os.path.join(os.path.dirname(__file__), "..", "colang_config")
         config = RailsConfig.from_path(config_path)
         rails = LLMRails(config)
-        # Synchronous call — NeMo guardrails
+        # NeMo generate - may fail in async context with uvloop
         result = rails.generate(messages=[{"role": "user", "content": prompt}])
 
         # If NeMo returned a refusal, it blocked the request
@@ -185,6 +242,7 @@ def owasp_tag_node(state: SafetyState) -> SafetyState:
             "harm_detection": ["output_handling"],
             "pii_detection": ["pii_disclosure"],
             "agentic_safety": ["goal_hijacking", "tool_abuse"],
+            "misinformation_detection": ["misinformation", "output_handling"],
         }
         violation_types = policy_to_violation.get(policy, ["prompt_injection"])
         for vt in violation_types:

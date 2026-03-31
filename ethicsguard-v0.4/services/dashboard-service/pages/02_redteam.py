@@ -80,7 +80,7 @@ def _generate_attack(attack_type: str, batch_size: int) -> list[dict]:
 def _run_batch(prompts: list, target: str) -> list[dict]:
     try:
         attack_list = prompts if all(isinstance(p, str) for p in prompts) else [p.get('prompt', str(p)) for p in prompts]
-        with httpx.Client(timeout=60) as client:
+        with httpx.Client(timeout=180) as client:
             resp = client.post(
                 f"{REDTEAM_URL}/run_batch",
                 json={"attacks": attack_list, "target": target},

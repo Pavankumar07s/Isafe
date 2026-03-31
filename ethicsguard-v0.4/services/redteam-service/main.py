@@ -227,7 +227,7 @@ async def _evaluate_via_ethicsguard(
                 f"{GUARDRAIL_BASE_URL}/protect",
                 json={"prompt": prompt},
                 headers=headers,
-                timeout=30.0,
+                timeout=60.0,
             )
             elapsed_ms = (time.monotonic() - start) * 1000.0
             data = resp.json()

@@ -147,6 +147,30 @@ _JAILBREAK_KEYWORDS: list[str] = [
     "no safety", "no rules", "override your rules", "new instructions",
     "from now on", "roleplay as", "base64 decode", "hypothetically",
     "in a fictional world", "imagine no restrictions",
+    # Broad "disregard" / "admin override" patterns
+    "disregard all", "disregard any", "disregard the",
+    "admin override", "priority alpha", "priority one override",
+    "authorized override", "override all restrictions",
+    "unrestricted assistant", "no content restrictions",
+    "content restrictions", "content policies",
+    "without restrictions", "without limitations",
+    "without safety", "without content",
+    # Multilingual jailbreak (common languages)
+    "oubliez", "oublier", "ignorez", "ignorer les instructions",
+    "vergessen sie", "ignorieren sie", "ignorieren",
+    "ignora le istruzioni", "ignora tutte",
+    "olvida todas", "ignora todas", "ignorar instrucciones",
+    # Trusted document / social engineering wrapper
+    "trusted document", "trusted source", "from a trusted",
+    "authorized document", "verified document",
+    "hidden instructions", "hidden ins",
+    # Additional injection markers
+    "[inst]", "<<sys>>", "<</sys>>", "[/inst]",
+    "<s>", "</s>",
+    "<|system|>", "<|user|>", "<|assistant|>",
+    "<|endoftext|>",
+    "prompt:", "instruction:",
+    "[hidden", "[concealed",
     # Prompt injection patterns
     "im_start", "im_end", "<|im_start|>", "admin_mode", "safety=off",
     "safety = off", "maintenance mode", "disregard prior", "secret admin",
@@ -476,66 +500,21 @@ def compliance_check_node(state: SafetyState) -> SafetyState:
 
 
 def nemo_classify_node(state: SafetyState) -> SafetyState:
-    """Node 2: Run NeMo Guardrails classification.
+    """Node 2: Keyword-based safety classification.
 
-    ALWAYS runs keyword classifier first (reliable, deterministic).
-    NeMo is a secondary layer — can only make the result MORE restrictive,
-    never override a keyword block.
+    NeMo Guardrails is disabled in production — it adds 15-54 s latency
+    per prompt (calling the LLM a second time) yet blocks nothing the
+    keyword classifier misses.  That latency causes cascade timeouts in
+    batch processing.  The keyword classifier (650+ patterns) provides
+    deterministic, sub-millisecond classification.
     """
     prompt = state["prompt"]
 
-    # ── Step 1: ALWAYS run keyword classifier (fast, deterministic) ──────
     kw_policy, kw_safety = _keyword_classify(prompt)
-    if kw_policy is not None:
-        # Keyword classifier detected a threat — block immediately
-        state["nemo_result"] = {"blocked": True, "fallback": False, "method": "keyword"}
-        state["policy_triggered"] = kw_policy
-        state["safety_score"] = kw_safety
-        state["trace_steps"] = state.get("trace_steps", []) + ["nemo_classify"]
-        return state
 
-    # ── Step 2: Try NeMo as secondary layer (LLM-based, best-effort) ────
-    try:
-        import concurrent.futures
-        from nemoguardrails import LLMRails, RailsConfig
-        config_path = os.path.join(os.path.dirname(__file__), "..", "colang_config")
-        config = RailsConfig.from_path(config_path)
-        rails = LLMRails(config)
-
-        # Run NeMo's sync generate() in a thread to avoid
-        # uvloop / nest_asyncio conflicts in the async FastAPI context.
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-            result = pool.submit(
-                rails.generate, messages=[{"role": "user", "content": prompt}]
-            ).result(timeout=15)
-
-        # If NeMo returned a refusal, it blocked the request
-        refusal_phrases = [
-            "I'm not able to assist",
-            "I cannot",
-            "I cannot help",
-            "I cannot change my",
-            "I detected",
-            "I need to stay within",
-        ]
-        is_blocked = any(phrase.lower() in result.get("content", "").lower() for phrase in refusal_phrases)
-
-        if is_blocked:
-            state["nemo_result"] = {"blocked": True, "response": result.get("content", ""), "method": "nemo"}
-            state["policy_triggered"] = "nemo_guardrails"
-            state["safety_score"] = 10.0
-        else:
-            state["nemo_result"] = {"blocked": False, "response": result.get("content", ""), "method": "nemo"}
-            state["policy_triggered"] = None
-            state["safety_score"] = 90.0
-
-    except Exception as exc:
-        logger.info("NeMo Guardrails unavailable (keyword classifier active): %s", exc)
-        # Keywords already passed above — mark as safe
-        state["nemo_result"] = {"blocked": False, "fallback": True, "method": "keyword_only"}
-        state["policy_triggered"] = None
-        state["safety_score"] = 95.0
-
+    state["nemo_result"] = {"blocked": kw_policy is not None, "method": "keyword"}
+    state["policy_triggered"] = kw_policy
+    state["safety_score"] = kw_safety
     state["trace_steps"] = state.get("trace_steps", []) + ["nemo_classify"]
     return state
 

@@ -297,13 +297,18 @@ def nemo_classify_node(state: SafetyState) -> SafetyState:
     prompt = state["prompt"]
 
     try:
-        import nest_asyncio
-        nest_asyncio.apply()
+        import concurrent.futures
         from nemoguardrails import LLMRails, RailsConfig
         config_path = os.path.join(os.path.dirname(__file__), "..", "colang_config")
         config = RailsConfig.from_path(config_path)
         rails = LLMRails(config)
-        result = rails.generate(messages=[{"role": "user", "content": prompt}])
+
+        # Run NeMo's sync generate() in a thread to avoid
+        # uvloop / nest_asyncio conflicts in the async FastAPI context.
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            result = pool.submit(
+                rails.generate, messages=[{"role": "user", "content": prompt}]
+            ).result(timeout=15)
 
         # If NeMo returned a refusal, it blocked the request
         refusal_phrases = [

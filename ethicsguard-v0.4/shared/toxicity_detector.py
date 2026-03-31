@@ -30,7 +30,7 @@ def _get_detoxify_model() -> Any:
             _detoxify_model = Detoxify("original")
             logger.info("detoxify model loaded successfully")
         except Exception as exc:
-            logger.warning("Failed to load detoxify model: %s", exc)
+            logger.debug("detoxify not available (expected in lightweight deploy): %s", exc)
             _detoxify_model = None
     return _detoxify_model
 

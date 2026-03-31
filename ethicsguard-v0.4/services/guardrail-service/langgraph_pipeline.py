@@ -35,7 +35,7 @@ class SafetySupervisorAgent:
 
     def __init__(self, audit_logger: AuditLogger | None = None) -> None:
         self._audit_logger = audit_logger
-        self._model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        self._model = os.getenv("OPENAI_MODEL", "qwen/qwen3-32b")
 
     async def protect(
         self,

@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
-# EthicsGuard v0.4 — Local Development Launcher
-# Starts all 4 services with Ollama (mistral:7b)
+# EthicsGuard v0.4 — Service Launcher
+# Starts all 4 services with Groq API (qwen3-32b)
 # =============================================================================
 
 set -euo pipefail
@@ -10,9 +10,9 @@ PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 # Common environment
 export PYTHONPATH="$PROJECT_ROOT"
-export OPENAI_API_KEY="ollama"
-export OPENAI_API_BASE="http://localhost:11434/v1"
-export OPENAI_MODEL="mistral:7b"
+export OPENAI_API_KEY="${GROQ_API_KEY:?Set GROQ_API_KEY env var before running}"
+export OPENAI_API_BASE="https://api.groq.com/openai/v1"
+export OPENAI_MODEL="qwen/qwen3-32b"
 export COMPLIANCE_MODE="STANDARD"
 export INTERNAL_API_SECRET="test-secret-for-development-32chars"
 export ENABLE_PROMETHEUS="true"
@@ -27,7 +27,7 @@ export EVAL_URL="http://localhost:8002"
 mkdir -p "$PROJECT_ROOT/data" "$PROJECT_ROOT/reports"
 
 echo "[EthicsGuard] v0.4 -- Starting all services..."
-echo "   Using Ollama (mistral:7b) at http://localhost:11434"
+echo "   Using Groq API (qwen/qwen3-32b)"
 echo ""
 
 # Kill any existing services

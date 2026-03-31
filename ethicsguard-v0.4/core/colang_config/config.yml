@@ -3,10 +3,10 @@ colang_version: "1.0"
 models:
   - type: main
     engine: openai
-    model: ${OPENAI_MODEL:mistral:7b}
+    model: ${OPENAI_MODEL:qwen/qwen3-32b}
     parameters:
-      openai_api_base: ${OPENAI_API_BASE:http://localhost:11434/v1}
-      api_key: ${OPENAI_API_KEY:ollama}
+      openai_api_base: ${OPENAI_API_BASE:https://api.groq.com/openai/v1}
+      api_key: ${OPENAI_API_KEY:}
 
 instructions:
   - type: general

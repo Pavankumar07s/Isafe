@@ -77,7 +77,7 @@ class AttackGenerator:
 
         api_key: str | None = os.getenv("OPENAI_API_KEY")
         api_base: str | None = os.getenv("OPENAI_API_BASE")
-        resolved_model: str = model or os.getenv("OPENAI_MODEL", "mistral:7b")
+        resolved_model: str = model or os.getenv("OPENAI_MODEL", "qwen/qwen3-32b")
 
         if api_key:
             try:

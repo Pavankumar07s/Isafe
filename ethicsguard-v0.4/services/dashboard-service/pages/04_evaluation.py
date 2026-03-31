@@ -1,4 +1,6 @@
 """EthicsGuard v0.4 Dashboard — Evaluation page."""
+import os
+import sys
 import time
 
 import httpx
@@ -6,31 +8,34 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-st.set_page_config(page_title="Evaluation — EthicsGuard", page_icon="🛡️", layout="wide")
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_PARENT = os.path.dirname(_HERE)
+if _PARENT not in sys.path:
+    sys.path.insert(0, _PARENT)
 
-import os
+st.set_page_config(page_title="Evaluation — EthicsGuard", page_icon="⬢", layout="wide", initial_sidebar_state="expanded")
+
+from components.theme import (
+    inject_theme, page_header, section_label, stat_card,
+    badge, sidebar_branding, plotly_layout_defaults,
+    C_PRIMARY, C_SUCCESS, C_DANGER, C_WARNING, C_TEXT, C_TEXT_SEC, PLOTLY_COLORS,
+)
+
+inject_theme()
+sidebar_branding()
 
 EVAL_URL = os.environ.get("EVAL_URL", "http://localhost:8002")
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+# ── Constants ─────────────────────────────────────────────────────────────────
 
 ATTACK_CATEGORIES = [
-    "prompt_injection",
-    "jailbreak",
-    "encoding",
-    "multilingual",
-    "semantic_smuggling",
-    "context_overflow",
-    "few_shot_poisoning",
-    "tool_abuse",
-    "crescendo",
+    "prompt_injection", "jailbreak", "encoding", "multilingual",
+    "semantic_smuggling", "context_overflow", "few_shot_poisoning",
+    "tool_abuse", "crescendo",
 ]
 
 SYSTEMS = ["EthicsGuard", "GPT-4o Raw", "OpenAI Mod", "LlamaGuard"]
 
-# Pre-loaded placeholder results
 PLACEHOLDER_SUMMARY = pd.DataFrame({
     "System": SYSTEMS,
     "ASR (%)": [4.2, 38.7, 22.1, 15.6],
@@ -49,16 +54,17 @@ PLACEHOLDER_ASR_BY_CATEGORY = {
     for i, cat in enumerate(ATTACK_CATEGORIES)
 }
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _start_eval() -> str | None:
-    """Start a full evaluation run; return the eval_id or None on failure."""
     try:
         with httpx.Client(timeout=15) as client:
             resp = client.post(f"{EVAL_URL}/run_eval", json={})
             resp.raise_for_status()
             return resp.json().get("eval_id")
     except httpx.ConnectError:
-        st.error("Cannot connect to evaluation-service. Is it running?")
+        st.error("Cannot connect to evaluation-service.")
     except httpx.HTTPStatusError as exc:
         st.error(f"evaluation-service returned HTTP {exc.response.status_code}")
     except Exception as exc:
@@ -67,7 +73,6 @@ def _start_eval() -> str | None:
 
 
 def _poll_status(eval_id: str) -> dict:
-    """Poll evaluation status; return the latest status dict."""
     try:
         with httpx.Client(timeout=10) as client:
             resp = client.get(f"{EVAL_URL}/eval_status/{eval_id}")
@@ -78,7 +83,6 @@ def _poll_status(eval_id: str) -> dict:
 
 
 def _fetch_results(eval_id: str) -> dict | None:
-    """Fetch completed evaluation results."""
     try:
         with httpx.Client(timeout=10) as client:
             resp = client.get(f"{EVAL_URL}/eval_status/{eval_id}")
@@ -90,42 +94,38 @@ def _fetch_results(eval_id: str) -> dict | None:
 
 
 def _download_report(eval_id: str) -> bytes | None:
-    """Download the PDF report for a completed evaluation."""
     try:
         with httpx.Client(timeout=30) as client:
             resp = client.get(f"{EVAL_URL}/report/{eval_id}")
             resp.raise_for_status()
             return resp.content
-    except httpx.ConnectError:
-        st.error("Cannot connect to evaluation-service.")
-    except httpx.HTTPStatusError as exc:
-        st.error(f"evaluation-service returned HTTP {exc.response.status_code}")
-    except Exception as exc:
-        st.error(f"Error downloading report: {exc}")
-    return None
+    except Exception:
+        return None
 
 
 def _render_asr_chart(asr_by_category: dict[str, dict[str, float]]):
-    """Render a side-by-side bar chart of ASR per attack category."""
     categories = list(asr_by_category.keys())
     fig = go.Figure()
-    colors = ["#3b82f6", "#f59e0b", "#ef4444", "#22c55e"]
     for idx, system in enumerate(SYSTEMS):
         values = [asr_by_category[cat].get(system, 0) for cat in categories]
-        fig.add_trace(go.Bar(name=system, x=categories, y=values, marker_color=colors[idx]))
-    fig.update_layout(
+        fig.add_trace(go.Bar(
+            name=system, x=categories, y=values,
+            marker_color=PLOTLY_COLORS[idx % len(PLOTLY_COLORS)],
+        ))
+    layout = plotly_layout_defaults()
+    layout.update(
         barmode="group",
         yaxis_title="ASR (%)",
-        yaxis=dict(range=[0, 100]),
-        height=450,
-        margin=dict(t=20, b=60),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        yaxis=dict(range=[0, 100], gridcolor="#1e293b"),
+        xaxis=dict(gridcolor="#1e293b", tickangle=-30),
+        height=420,
+        legend=dict(orientation="h", yanchor="bottom", y=1.04, xanchor="right", x=1),
     )
+    fig.update_layout(**layout)
     st.plotly_chart(fig, use_container_width=True)
 
 
 def _render_summary_table(summary_df: pd.DataFrame):
-    """Render the summary comparison table."""
     st.dataframe(
         summary_df.style.format({
             "ASR (%)": "{:.1f}",
@@ -138,12 +138,13 @@ def _render_summary_table(summary_df: pd.DataFrame):
     )
 
 
-# ---------------------------------------------------------------------------
-# Page
-# ---------------------------------------------------------------------------
+# ── Page ──────────────────────────────────────────────────────────────────────
 
-st.title("Evaluation")
-st.caption("Run comprehensive benchmark evaluations and compare systems.")
+page_header(
+    "Evaluation",
+    "Run comprehensive benchmark evaluations across attack categories and compare "
+    "EthicsGuard against baseline safety systems."
+)
 
 # Session state
 if "eval_id" not in st.session_state:
@@ -151,14 +152,24 @@ if "eval_id" not in st.session_state:
 if "eval_results" not in st.session_state:
     st.session_state.eval_results = None
 
-# --- Run evaluation ---
+# ── Run evaluation ────────────────────────────────────────────────────────────
+
+section_label("RUN BENCHMARK")
+
+st.markdown(
+    '<div style="color:#94a3b8; font-size:0.82rem; margin-bottom:12px;">'
+    'Launches a full evaluation against all attack categories and baselines. '
+    'Typically completes in 1-3 minutes.</div>',
+    unsafe_allow_html=True,
+)
+
 if st.button("Run Full Evaluation", type="primary"):
     eval_id = _start_eval()
     if eval_id:
         st.session_state.eval_id = eval_id
         st.session_state.eval_results = None
 
-        progress_bar = st.progress(0, text="Evaluation starting...")
+        progress_bar = st.progress(0, text="Evaluation starting…")
         status_text = st.empty()
 
         completed = False
@@ -185,55 +196,66 @@ if st.button("Run Full Evaluation", type="primary"):
 
         st.rerun()
 
-# --- Results section ---
-st.divider()
+# ── Results ───────────────────────────────────────────────────────────────────
 
 results = st.session_state.eval_results
 eval_id = st.session_state.eval_id
 
-if results and results.get("status") in ("complete", "completed", "done", "finished"):
-    st.subheader("Evaluation Results")
+is_live = results and results.get("status") in ("complete", "completed", "done", "finished")
 
-    # Parse results
+# Choose data source
+if is_live:
     asr_data = results.get("asr_by_category", PLACEHOLDER_ASR_BY_CATEGORY)
     summary_data = results.get("summary")
-    if summary_data and isinstance(summary_data, list):
-        summary_df = pd.DataFrame(summary_data)
-    else:
-        summary_df = PLACEHOLDER_SUMMARY
-
-    # ASR chart
-    st.markdown("#### ASR per Attack Category")
-    _render_asr_chart(asr_data)
-
-    # Summary table
-    st.markdown("#### System Comparison Summary")
-    _render_summary_table(summary_df)
-
-    # Download PDF report
-    st.divider()
-    if eval_id:
-        if "pdf_bytes" not in st.session_state:
-            st.session_state.pdf_bytes = None
-        if st.button("Generate PDF Report"):
-            with st.spinner("Generating report..."):
-                st.session_state.pdf_bytes = _download_report(eval_id)
-        if st.session_state.pdf_bytes:
-            st.download_button(
-                label="Download PDF",
-                data=st.session_state.pdf_bytes,
-                file_name=f"ethicsguard_eval_{eval_id}.pdf",
-                mime="application/pdf",
-            )
-    else:
-        st.info("Run an evaluation to enable PDF report download.")
+    summary_df = pd.DataFrame(summary_data) if summary_data and isinstance(summary_data, list) else PLACEHOLDER_SUMMARY
 else:
-    # Show placeholder results
-    st.subheader("Evaluation Results (Placeholder)")
-    st.info("Run a full evaluation to see live results. Showing pre-loaded placeholder data.")
+    asr_data = PLACEHOLDER_ASR_BY_CATEGORY
+    summary_df = PLACEHOLDER_SUMMARY
 
-    st.markdown("#### ASR per Attack Category")
-    _render_asr_chart(PLACEHOLDER_ASR_BY_CATEGORY)
+# Key metrics from summary
+section_label("KEY METRICS" + ("" if is_live else " (PLACEHOLDER)"))
 
-    st.markdown("#### System Comparison Summary")
-    _render_summary_table(PLACEHOLDER_SUMMARY)
+if not is_live:
+    st.caption("Run a full evaluation to see live results. Showing pre-loaded data.")
+
+eg_row = summary_df[summary_df["System"] == "EthicsGuard"]
+if not eg_row.empty:
+    eg_asr = eg_row.iloc[0]["ASR (%)"]
+    eg_fpr = eg_row.iloc[0]["FPR (%)"]
+    eg_lat = eg_row.iloc[0]["Latency p95 (ms)"]
+else:
+    eg_asr, eg_fpr, eg_lat = 4.2, 2.1, 45
+
+c1, c2, c3 = st.columns(3, gap="medium")
+with c1:
+    stat_card("Block Rate", f"{100 - eg_asr:.1f}%", "green" if eg_asr < 10 else "amber")
+with c2:
+    stat_card("False Positive Rate", f"{eg_fpr:.1f}%", "green" if eg_fpr < 5 else "amber")
+with c3:
+    stat_card("Latency p95", f"{eg_lat:.0f} ms", "green" if eg_lat < 100 else "amber")
+
+# ASR chart
+st.markdown("")
+section_label("ASR PER ATTACK CATEGORY")
+_render_asr_chart(asr_data)
+
+# Summary table
+section_label("SYSTEM COMPARISON")
+_render_summary_table(summary_df)
+
+# ── PDF Report ────────────────────────────────────────────────────────────────
+
+if eval_id and is_live:
+    section_label("REPORT DOWNLOAD")
+    if "pdf_bytes" not in st.session_state:
+        st.session_state.pdf_bytes = None
+    if st.button("Generate PDF Report"):
+        with st.spinner("Generating report…"):
+            st.session_state.pdf_bytes = _download_report(eval_id)
+    if st.session_state.pdf_bytes:
+        st.download_button(
+            label="Download PDF",
+            data=st.session_state.pdf_bytes,
+            file_name=f"ethicsguard_eval_{eval_id}.pdf",
+            mime="application/pdf",
+        )

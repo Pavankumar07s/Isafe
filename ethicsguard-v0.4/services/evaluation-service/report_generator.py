@@ -57,7 +57,9 @@ class ReportGenerator:
             The absolute path to the generated PDF.
         """
         pdf = FPDF()
-        pdf.set_auto_page_break(auto=True, margin=20)
+        pdf.set_auto_page_break(auto=True, margin=25)
+        pdf.set_left_margin(15)
+        pdf.set_right_margin(15)
         pdf.add_page()
 
         self._render_title(pdf)
@@ -116,7 +118,7 @@ class ReportGenerator:
         pdf.cell(0, 10, "Executive Summary", new_x="LMARGIN", new_y="NEXT")
         pdf.ln(2)
 
-        col_widths = [42, 30, 28, 28, 34, 28]
+        col_widths = [40, 28, 26, 26, 32, 28]
         headers = ["Target", "Prompts", "ASR", "FPR", "P95 Lat (ms)", "Errors"]
 
         # Header row
@@ -124,7 +126,7 @@ class ReportGenerator:
         pdf.set_fill_color(*COLOR_TABLE_HEADER)
         pdf.set_text_color(*COLOR_WHITE)
         for i, h in enumerate(headers):
-            pdf.cell(col_widths[i], 8, h, border=1, fill=True, align="C")
+            pdf.cell(col_widths[i], 9, h, border=1, fill=True, align="C")
         pdf.ln()
 
         # Data rows
@@ -149,10 +151,10 @@ class ReportGenerator:
             ]
             for i, val in enumerate(row):
                 pdf.cell(
-                    col_widths[i], 7, val, border=1, fill=True, align="C"
+                    col_widths[i], 8, val, border=1, fill=True, align="C"
                 )
             pdf.ln()
-        pdf.ln(8)
+        pdf.ln(10)
 
     # ------------------------------------------------------------------
     # Per-category ASR bar chart (drawn with fpdf2 rectangles)
@@ -185,15 +187,15 @@ class ReportGenerator:
         targets = list(eval_results.keys())
         num_targets = len(targets)
 
-        chart_left = pdf.l_margin + 45  # space for labels
-        chart_width = pdf.w - pdf.l_margin - pdf.r_margin - 50
-        row_height = 6
-        bar_height = max(3, row_height / num_targets) if num_targets else 4
-        group_height = row_height * max(num_targets, 1) + 4
+        chart_left = pdf.l_margin + 50  # space for labels
+        chart_width = pdf.w - pdf.l_margin - pdf.r_margin - 55
+        row_height = 10
+        bar_height = max(5, row_height / max(num_targets, 1))
+        group_height = row_height * max(num_targets, 1) + 6
 
         # Check if we need a new page
-        needed = len(categories) * group_height + 30
-        if pdf.get_y() + needed > pdf.h - 30:
+        needed = len(categories) * group_height + 40
+        if pdf.get_y() + needed > pdf.h - 40:
             pdf.add_page()
 
         start_y = pdf.get_y()
@@ -202,10 +204,10 @@ class ReportGenerator:
             group_y = start_y + cat_idx * group_height
 
             # Category label
-            pdf.set_font("Helvetica", "", 7)
+            pdf.set_font("Helvetica", "", 8)
             pdf.set_text_color(*COLOR_PRIMARY)
             pdf.set_xy(pdf.l_margin, group_y)
-            pdf.cell(43, group_height - 2, cat.replace("_", " ").title(), align="R")
+            pdf.cell(48, group_height - 2, cat.replace("_", " ").title(), align="R")
 
             for t_idx, tgt in enumerate(targets):
                 per_cat = eval_results[tgt].get("per_category", {})
@@ -219,45 +221,45 @@ class ReportGenerator:
 
                 color = TARGET_COLORS.get(tgt, (150, 150, 150))
                 pdf.set_fill_color(*color)
-                pdf.rect(chart_left, bar_y, bar_w, bar_height - 0.5, style="F")
+                pdf.rect(chart_left, bar_y, bar_w, bar_height - 1, style="F")
 
                 # ASR % label
-                pdf.set_font("Helvetica", "", 5)
-                pdf.set_xy(chart_left + bar_w + 1, bar_y)
-                pdf.cell(15, bar_height - 0.5, f"{asr:.0%}")
+                pdf.set_font("Helvetica", "", 7)
+                pdf.set_xy(chart_left + bar_w + 2, bar_y)
+                pdf.cell(18, bar_height - 1, f"{asr:.0%}")
 
         # Legend
-        legend_y = start_y + len(categories) * group_height + 4
-        if legend_y > pdf.h - 30:
+        legend_y = start_y + len(categories) * group_height + 8
+        if legend_y > pdf.h - 40:
             pdf.add_page()
             legend_y = pdf.get_y()
 
         pdf.set_xy(pdf.l_margin, legend_y)
         pdf.set_font("Helvetica", "B", 8)
-        pdf.cell(0, 5, "Legend:", new_x="LMARGIN", new_y="NEXT")
-        pdf.set_font("Helvetica", "", 7)
+        pdf.cell(0, 6, "Legend:", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 8)
         for tgt in targets:
             color = TARGET_COLORS.get(tgt, (150, 150, 150))
             pdf.set_fill_color(*color)
             x = pdf.get_x()
             y = pdf.get_y()
-            pdf.rect(x, y + 1, 8, 3, style="F")
-            pdf.set_xy(x + 10, y)
-            pdf.cell(0, 5, tgt, new_x="LMARGIN", new_y="NEXT")
+            pdf.rect(x, y + 1.5, 10, 4, style="F")
+            pdf.set_xy(x + 13, y)
+            pdf.cell(0, 6, tgt, new_x="LMARGIN", new_y="NEXT")
 
-        pdf.set_y(legend_y + len(targets) * 5 + 8)
+        pdf.set_y(legend_y + len(targets) * 6 + 10)
 
     # ------------------------------------------------------------------
     # OWASP tag coverage
     # ------------------------------------------------------------------
     def _render_owasp_coverage(self, pdf: FPDF, eval_results: dict):
-        if pdf.get_y() > pdf.h - 60:
+        if pdf.get_y() > pdf.h - 70:
             pdf.add_page()
 
         pdf.set_font("Helvetica", "B", 14)
         pdf.set_text_color(*COLOR_PRIMARY)
-        pdf.cell(0, 10, "OWASP LLM/ASI Tag Coverage", new_x="LMARGIN", new_y="NEXT")
-        pdf.ln(2)
+        pdf.cell(0, 12, "OWASP LLM/ASI Tag Coverage", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(3)
 
         owasp_tags = {
             "LLM01": "Prompt Injection / Jailbreak",
@@ -273,37 +275,37 @@ class ReportGenerator:
         pdf.set_font("Helvetica", "B", 9)
         pdf.set_fill_color(*COLOR_TABLE_HEADER)
         pdf.set_text_color(*COLOR_WHITE)
-        pdf.cell(25, 8, "Tag", border=1, fill=True, align="C")
-        pdf.cell(70, 8, "Description", border=1, fill=True, align="C")
-        pdf.cell(30, 8, "Status", border=1, fill=True, align="C")
+        pdf.cell(28, 9, "Tag", border=1, fill=True, align="C")
+        pdf.cell(90, 9, "Description", border=1, fill=True, align="C")
+        pdf.cell(32, 9, "Status", border=1, fill=True, align="C")
         pdf.ln()
 
         pdf.set_font("Helvetica", "", 9)
         for tag, desc in owasp_tags.items():
             pdf.set_text_color(*COLOR_PRIMARY)
             pdf.set_fill_color(*COLOR_LIGHT_BG)
-            pdf.cell(25, 7, tag, border=1, fill=True, align="C")
-            pdf.cell(70, 7, desc, border=1, fill=True)
+            pdf.cell(28, 8, tag, border=1, fill=True, align="C")
+            pdf.cell(90, 8, desc, border=1, fill=True)
             pdf.set_text_color(*COLOR_SUCCESS)
-            pdf.cell(30, 7, "Covered", border=1, fill=True, align="C")
+            pdf.cell(32, 8, "Covered", border=1, fill=True, align="C")
             pdf.ln()
 
-        pdf.ln(8)
+        pdf.ln(10)
 
     # ------------------------------------------------------------------
     # Methodology section
     # ------------------------------------------------------------------
     @staticmethod
     def _render_methodology(pdf: FPDF):
-        if pdf.get_y() > pdf.h - 80:
+        if pdf.get_y() > pdf.h - 90:
             pdf.add_page()
 
         pdf.set_font("Helvetica", "B", 14)
         pdf.set_text_color(*COLOR_PRIMARY)
-        pdf.cell(0, 10, "Methodology", new_x="LMARGIN", new_y="NEXT")
-        pdf.ln(2)
+        pdf.cell(0, 12, "Methodology", new_x="LMARGIN", new_y="NEXT")
+        pdf.ln(3)
 
-        pdf.set_font("Helvetica", "", 9)
+        pdf.set_font("Helvetica", "", 9.5)
         pdf.set_text_color(*COLOR_PRIMARY)
 
         methodology_text = (
@@ -331,8 +333,8 @@ class ReportGenerator:
             "ToxicityMetric) are optionally run as a secondary analysis pass."
         )
 
-        pdf.multi_cell(0, 4.5, methodology_text)
-        pdf.ln(6)
+        pdf.multi_cell(0, 5.5, methodology_text)
+        pdf.ln(8)
 
         # Footer
         pdf.set_font("Helvetica", "I", 8)

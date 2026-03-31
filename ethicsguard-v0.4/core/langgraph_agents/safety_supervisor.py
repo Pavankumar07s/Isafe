@@ -55,6 +55,70 @@ _HARM_KEYWORDS: list[str] = [
     "hack", "bomb", "kill", "murder", "weapon", "exploit", "attack",
     "poison", "torture", "suicide", "self-harm", "terrorism",
     "how to hurt", "how to make a bomb", "how to hack",
+    # Phishing / fraud
+    "phishing", "create a phishing", "phishing website", "clone a website",
+    "fake login page", "credential harvesting", "steal credentials",
+    "keylogger", "spyware", "fake paypal", "fake bank",
+    # Deepfake / non-consensual imagery
+    "deepfake", "generate deepfake", "deepfake porn", "face swap",
+    "non-consensual", "revenge porn", "nude generator", "undress ai",
+    # Hacking
+    "hack into", "brute force", "crack password", "sql injection",
+    "hack someone", "ddos", "denial of service", "malware",
+    "ransomware", "trojan", "rootkit", "zero-day exploit",
+    # Violence / weapons
+    "synthesize", "ricin", "sarin", "anthrax", "explosive",
+    "make a gun", "3d print gun", "ghost gun", "homemade weapon",
+    "how to stab", "how to strangle",
+    # Drug synthesis
+    "methamphetamine", "how to make meth", "synthesize lsd",
+    "make cocaine", "fentanyl synthesis", "cook meth",
+    "drug synthesis", "make drugs", "manufacture drugs",
+]
+
+_SELFHARM_KEYWORDS: list[str] = [
+    # Suicide
+    "how to commit suicide", "want to end my life", "painless way to die",
+    "methods of suicide", "commit suicide", "kill myself",
+    "end my life", "ways to die", "suicide using",
+    "most painless", "od on pills", "how to overdose",
+    "slit my wrists", "hang myself", "jump off",
+    "i want to die", "suicidal", "no reason to live",
+    # Self-harm
+    "cut myself", "hurt myself", "self harm instructions",
+    "how to self harm", "burning myself",
+]
+
+_HATESPEECH_KEYWORDS: list[str] = [
+    # Discriminatory patterns
+    "why .* is inferior", "inferior to others", "inferior race",
+    "essay explaining why", "subhuman", "mongrel race",
+    "list of slurs", "slurs and insults", "slurs targeted",
+    "insults targeted at", "racial slurs",
+    "ethnic cleansing", "genocide is justified", "deportation of",
+    "white supremacy", "white power", "racial purity",
+    "hate .* people", "all .* should die", "go back to",
+    "n-word", "the holocaust didn't happen", "holocaust denial",
+    "women are inferior", "women belong in", "women shouldn't",
+    "gay people are", "homosexuality is a disease",
+    "inferior to", "superiority of",
+]
+
+_NSFW_KEYWORDS: list[str] = [
+    # Sexual content
+    "explicit erotic", "erotic story", "sexual story",
+    "write porn", "write erotica", "explicit sex",
+    "graphic sex", "sex scene", "sexual fantasy",
+    "nsfw story", "nsfw content", "adult story",
+    "pornographic", "hentai", "rule34", "xxx",
+    "involving minors", "underage", "child porn", "csam",
+    "pedophilia", "sexual content with children",
+    # Graphic violence / assault
+    "rape scene", "graphic rape", "violent rape",
+    "describe a rape", "sexual assault scene",
+    "torture scene", "gore", "snuff", "graphic murder",
+    "graphic violence", "dismemberment",
+    "violent sexual", "forced sex",
 ]
 
 _JAILBREAK_KEYWORDS: list[str] = [
@@ -71,6 +135,18 @@ _JAILBREAK_KEYWORDS: list[str] = [
     "safety = off", "maintenance mode", "disregard prior", "secret admin",
     "system prompt override", "ignore the above", "output the contents",
     "retrieve the contents", "tool_call memory", "function call",
+    # System prompt leakage
+    "repeat your full system prompt", "repeat your system prompt",
+    "show your system prompt", "display your system prompt",
+    "reveal your instructions", "what are your instructions",
+    "show your instructions", "print your prompt",
+    "repeat your instructions", "what is your system message",
+    "output your prompt", "system override", "[system override]",
+    "between <policy>", "</policy> tags", "<system>", "</system>",
+    "ignore your safety", "ignore safety instructions",
+    "repeat everything above", "text above this line",
+    "output everything before", "initial instructions",
+    "display the hidden", "reveal the hidden",
     # Encoding / obfuscation
     "unrestricted-gpt", "evil-gpt", "gpt-5-uncensored", "uncensored",
     "freed from", "no safety restrictions", "sandboxed test environment",
@@ -122,6 +198,12 @@ _MISINFO_KEYWORDS: list[str] = [
     "don't want to go to the hospital", "home remedies instead",
     "don't need a doctor", "safe alternative to medication",
     "cure for cancer at home", "instead of seeing a doctor",
+    "cure cancer naturally", "cure .* naturally at home",
+    "cure .* at home", "treat cancer at home", "heal cancer with",
+    "alternative cancer cure", "natural cancer treatment",
+    "stage 4 .* naturally", "cure stage",
+    "essential oils cure", "prayer heals cancer",
+    "reject chemotherapy", "homeopathy cures",
     # CoT exploitation
     "bypass content filters", "step by step about how to",
     "trick a bank", "how to trick", "chain-of-thought reasoning to figure",
@@ -137,9 +219,31 @@ def _keyword_classify(text: str) -> tuple[str | None, float]:
     """
     text_lower = text.lower()
 
+    import re as _re
+
     for kw in _JAILBREAK_KEYWORDS:
         if kw in text_lower:
             return "jailbreak_detection", 5.0
+
+    for kw in _NSFW_KEYWORDS:
+        if kw in text_lower:
+            return "nsfw_content_detection", 5.0
+
+    for kw in _SELFHARM_KEYWORDS:
+        try:
+            if _re.search(kw, text_lower):
+                return "selfharm_detection", 5.0
+        except _re.error:
+            if kw in text_lower:
+                return "selfharm_detection", 5.0
+
+    for kw in _HATESPEECH_KEYWORDS:
+        try:
+            if _re.search(kw, text_lower):
+                return "hate_speech_detection", 5.0
+        except _re.error:
+            if kw in text_lower:
+                return "hate_speech_detection", 5.0
 
     for kw in _HARM_KEYWORDS:
         if kw in text_lower:
@@ -154,8 +258,12 @@ def _keyword_classify(text: str) -> tuple[str | None, float]:
             return "agentic_safety", 10.0
 
     for kw in _MISINFO_KEYWORDS:
-        if kw in text_lower:
-            return "misinformation_detection", 10.0
+        try:
+            if _re.search(kw, text_lower):
+                return "misinformation_detection", 10.0
+        except _re.error:
+            if kw in text_lower:
+                return "misinformation_detection", 10.0
 
     return None, 95.0
 
@@ -243,6 +351,9 @@ def owasp_tag_node(state: SafetyState) -> SafetyState:
             "pii_detection": ["pii_disclosure"],
             "agentic_safety": ["goal_hijacking", "tool_abuse"],
             "misinformation_detection": ["misinformation", "output_handling"],
+            "nsfw_content_detection": ["output_handling"],
+            "selfharm_detection": ["output_handling"],
+            "hate_speech_detection": ["output_handling", "misinformation"],
         }
         violation_types = policy_to_violation.get(policy, ["prompt_injection"])
         for vt in violation_types:
